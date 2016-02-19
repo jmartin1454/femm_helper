@@ -6,6 +6,8 @@ import numpy
 import math
 from optparse import OptionParser
 
+
+
 parser = OptionParser()
 
 parser.add_option("-s", "--selfshielded",
@@ -19,6 +21,10 @@ parser.add_option("-c", "--cylindrical",
 
 (options, args) = parser.parse_args()
 
+
+points = []
+segs = []
+arcsegs = []
 
 print
 print
@@ -44,12 +50,36 @@ if not options.cyl:
     print "For the magnetic shield outer radius"
     print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,-ro,0,ro))
     print "Join these using Operate on Arc Segments, with 180 degree angle"
+    points.append([0,-ri]) # 0
+    points.append([0,ri])  # 1
+    points.append([0,-ro]) # 2
+    points.append([0,ro])  # 3
+    arcsegs.append([0,1])
+    arcsegs.append([2,3])
+    segs.append([0,3])
+    segs.append([1,2])
 else:
     print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,-hi/2,0,-ho/2))
     print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,hi/2,0,ho/2))
     print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(ri,-hi/2,ro,-ho/2))
     print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(ri,hi/2,ro,ho/2))
     print "Join these using Operate on (Line) Segments"
+    points.append([0,-hi/2]) # 0
+    points.append([0,-ho/2]) # 1
+    points.append([0,hi/2])  # 2
+    points.append([0,ho/2])  # 3
+    points.append([ri,-hi/2])# 4
+    points.append([ro,-ho/2])# 5
+    points.append([ri,hi/2]) # 6
+    points.append([ro,ho/2]) # 7
+    segs.append([0,1])
+    segs.append([1,5])
+    segs.append([5,7])
+    segs.append([7,3])
+    segs.append([3,2])
+    segs.append([2,6])
+    segs.append([6,4])
+    segs.append([4,0])
 print
 
 rc=input('Input the coil radius (m):  ')
@@ -65,13 +95,11 @@ else:
     print hi
     zpositions=numpy.arange(-hi/2+hi/nc/2,hi/2+hi/nc/2,hi/nc)
     rpositions=zpositions*0+rc
-print zpositions
-print rpositions
+
 rpositions_left=rpositions-sc/2
 rpositions_right=rpositions+sc/2
 zpositions_top=zpositions+sc/2
 zpositions_bottom=zpositions-sc/2
-
 
 for i in range(len(zpositions)):
     coilnumber=i+1
@@ -79,7 +107,14 @@ for i in range(len(zpositions)):
     print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f}) ({4:.6f},{5:.6f}) ({6:.6f},{7:.6f})'.format(rpositions_left[i],zpositions_bottom[i],rpositions_left[i],zpositions_top[i],rpositions_right[i],zpositions_top[i],rpositions_right[i],zpositions_bottom[i]))
     print "Join these using Operate on (Line) Segments"
     print
-
+    points.append([rpositions_left[i],zpositions_bottom[i]])
+    points.append([rpositions_left[i],zpositions_top[i]])
+    points.append([rpositions_right[i],zpositions_top[i]])
+    points.append([rpositions_right[i],zpositions_bottom[i]])
+    segs.append([len(points)-4,len(points)-3])
+    segs.append([len(points)-3,len(points)-2])
+    segs.append([len(points)-2,len(points)-1])
+    segs.append([len(points)-1,len(points)-4])
 
 if options.ss:
     rc_ss=input('Input the radius of the self-shielding coil (m):  ')
@@ -95,6 +130,14 @@ if options.ss:
         print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f}) ({4:.6f},{5:.6f}) ({6:.6f},{7:.6f})'.format(rpositions_left_ss[i],zpositions_bottom_ss[i],rpositions_left_ss[i],zpositions_top_ss[i],rpositions_right_ss[i],zpositions_top_ss[i],rpositions_right_ss[i],zpositions_bottom_ss[i]))
         print "Join these using Operate on (Line) Segments"
         print
+        points.append([rpositions_left_ss[i],zpositions_bottom_ss[i]])
+        points.append([rpositions_left_ss[i],zpositions_top_ss[i]])
+        points.append([rpositions_right_ss[i],zpositions_top_ss[i]])
+        points.append([rpositions_right_ss[i],zpositions_bottom_ss[i]])
+        segs.append([len(points)-4,len(points)-3])
+        segs.append([len(points)-3,len(points)-2])
+        segs.append([len(points)-2,len(points)-1])
+        segs.append([len(points)-1,len(points)-4])
 
 
 b=input('Input the desired central field (uT):  ')
@@ -133,4 +176,10 @@ else:
     print
     print 'For infinite cylinder, put a current of '
     print '{0:.6e} A in the coil'.format(ic)
+    print
+
+# Write out all the points, segments, and arc segments, in FEMM format
+
+print "[NumPoints] = ",len(points)
+for i in range(len(points)):
     print

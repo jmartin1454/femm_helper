@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# FEMM Helper by Jeff Martin
+
 import numpy
 import math
 from optparse import OptionParser

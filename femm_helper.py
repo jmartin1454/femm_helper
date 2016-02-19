@@ -7,44 +7,71 @@ import math
 from optparse import OptionParser
 
 parser = OptionParser()
+
 parser.add_option("-s", "--selfshielded",
                   action="store_true", dest="ss", default=False,
                   help="included self-shielding coil")
+
+parser.add_option("-c", "--cylindrical",
+                  action="store_true", dest="cyl", default=False,
+                  help="included self-shielding coil")
+
+
 (options, args) = parser.parse_args()
+
 
 print
 print
 print "FEMM Helper"
 print
-ri=input('Input the inner radius of the magnetic shield (m):  ')
-ro=input('Input the outer radius of the magnetic shield (m):  ')
+ri=float(input('Input the inner radius of the magnetic shield (m):  '))
+ro=float(input('Input the outer radius of the magnetic shield (m):  '))
+
+if options.cyl:
+    hi=float(input('Input the inner height of the magnetic shield (m):  '))
+    ho=float(input('Input the outer height of the magnetic shield (m):  '))
 
 print
 print
 print "Make the following points in FEMM"
 print "Format:  (r-coord,z-coord)"
 print
-print "For the magnetic shield inner radius"
-print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,-ri,0,ri))
-print "Join these using Operate on Arc Segments, with 180 degree angle"
-print
-print "For the magnetic shield outer radius"
-print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,-ro,0,ro))
-print "Join these using Operate on Arc Segments, with 180 degree angle"
+if not options.cyl:
+    print "For the magnetic shield inner radius"
+    print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,-ri,0,ri))
+    print "Join these using Operate on Arc Segments, with 180 degree angle"
+    print
+    print "For the magnetic shield outer radius"
+    print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,-ro,0,ro))
+    print "Join these using Operate on Arc Segments, with 180 degree angle"
+else:
+    print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,-hi/2,0,-ho/2))
+    print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,hi/2,0,ho/2))
+    print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(ri,-hi/2,ro,-ho/2))
+    print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(ri,hi/2,ro,ho/2))
+    print "Join these using Operate on (Line) Segments"
 print
 
 rc=input('Input the coil radius (m):  ')
 nc=input('Input the number of coils:  ')
 sc=input('Input the side length for each coil profile (m):  ')
 
-zpositions=numpy.arange(-(nc-1)*rc/nc,+(nc-1)*rc/nc+2*rc/nc,2*rc/nc)
-# z-positions of coils, based on Nouri and Plaster equation (5) and
-# surrounding text, and based on how numpy.arange works.
-rpositions=(rc**2-zpositions**2)**.5
+if not options.cyl:
+    zpositions=numpy.arange(-(nc-1)*rc/nc,+(nc-1)*rc/nc+2*rc/nc,2*rc/nc)
+    # z-positions of coils, based on Nouri and Plaster equation (5) and
+    # surrounding text, and based on how numpy.arange works.
+    rpositions=(rc**2-zpositions**2)**.5
+else:
+    print hi
+    zpositions=numpy.arange(-hi/2+hi/nc/2,hi/2+hi/nc/2,hi/nc)
+    rpositions=zpositions*0+rc
+print zpositions
+print rpositions
 rpositions_left=rpositions-sc/2
 rpositions_right=rpositions+sc/2
 zpositions_top=zpositions+sc/2
 zpositions_bottom=zpositions-sc/2
+
 
 for i in range(len(zpositions)):
     coilnumber=i+1
@@ -71,32 +98,39 @@ if options.ss:
 
 
 b=input('Input the desired central field (uT):  ')
-
-# http://hyperphysics.phy-astr.gsu.edu/hbase/magnetic/curloo.html
-
 mu0o4pi=1.0e-7 # T*m/A
-bzsum=sum(mu0o4pi*2*math.pi*rpositions**2/rc**3) # geometry factor
-ic=b*1.0e-6/bzsum
-print
-print 'For free space, put a current of {0:.6e} A in the coil'.format(ic)
-print
 
-if options.ss:
-    bzsum_ss=sum(mu0o4pi*2*math.pi*rpositions_ss**2/rc_ss**3) # same
+if not options.cyl:
+    # http://hyperphysics.phy-astr.gsu.edu/hbase/magnetic/curloo.html
+    bzsum=sum(mu0o4pi*2*math.pi*rpositions**2/rc**3) # geometry factor
+    ic=b*1.0e-6/bzsum
+    print
+    print 'For free space, put a current of {0:.6e} A in the coil'.format(ic)
+    print
+
+    if options.ss:
+        bzsum_ss=sum(mu0o4pi*2*math.pi*rpositions_ss**2/rc_ss**3) # same
                                                               # geometry
                                                               # factor
                                                               # as
                                                               # above
-    bzsum_ss_sscurrent_correction=-bzsum_ss*rc**2/rc_ss**2 # correct
+        bzsum_ss_sscurrent_correction=-bzsum_ss*rc**2/rc_ss**2 # correct
                                                            # factor
                                                            # for
                                                            # current
                                                            # in shield
                                                            # coil
-    ic_ss=b*1.0e-6/(bzsum+bzsum_ss_sscurrent_correction)
+        ic_ss=b*1.0e-6/(bzsum+bzsum_ss_sscurrent_correction)
+        print
+        print 'For self-shielded configuration, put a current of'
+        print '{0:.6e} A in the inner coil, and'.format(ic_ss)
+        print '{0:.6e} A on the outer coil.'.format(-ic_ss*rc**2/rc_ss**2)
+        print
+        print
+
+else:
+    ic=b*1.0e-6*hi/nc/(4*math.pi*mu0o4pi)
     print
-    print 'For self-shielded configuration, put a current of'
-    print '{0:.6e} A in the inner coil, and'.format(ic_ss)
-    print '{0:.6e} A on the outer coil.'.format(-ic_ss*rc**2/rc_ss**2)
-    print
+    print 'For infinite cylinder, put a current of '
+    print '{0:.6e} A in the coil'.format(ic)
     print

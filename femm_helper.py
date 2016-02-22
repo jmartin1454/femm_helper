@@ -58,8 +58,8 @@ if not options.cyl:
     points.append([0,ro])  # 3
     arcsegs.append([0,1])
     arcsegs.append([2,3])
-    segs.append([0,3])
-    segs.append([1,2])
+    segs.append([0,2])
+    segs.append([1,3])
     r=(ri+ro)/2/2**.5
     z=r
     blocklabels.append([r,z,1,0])

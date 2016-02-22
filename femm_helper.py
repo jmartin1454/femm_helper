@@ -123,7 +123,7 @@ for i in range(len(zpositions)):
     segs.append([len(points)-3,len(points)-2])
     segs.append([len(points)-2,len(points)-1])
     segs.append([len(points)-1,len(points)-4])
-    blocklabels.append([rpositions[i],zpositions[i],2,1])
+    blocklabels.append([rpositions[i],zpositions[i],3,1])
 
 if options.ss:
     rc_ss=input('Input the radius of the self-shielding coil (m):  ')
@@ -147,9 +147,9 @@ if options.ss:
         segs.append([len(points)-3,len(points)-2])
         segs.append([len(points)-2,len(points)-1])
         segs.append([len(points)-1,len(points)-4])
-        blocklabels.append([rpositions_ss[i],zpositions_ss[i],2,2])
+        blocklabels.append([rpositions_ss[i],zpositions_ss[i],3,2])
 
-blocklabels.append([rc/2,0,3,0]) # Air label
+blocklabels.append([rc/2,0,2,0]) # Air label
 
 b=input('Input the desired central field (uT):  ')
 mu0o4pi=1.0e-7 # T*m/A

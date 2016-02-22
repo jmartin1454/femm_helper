@@ -7,7 +7,6 @@ import math
 from optparse import OptionParser
 
 
-
 parser = OptionParser()
 
 parser.add_option("-s", "--selfshielded",
@@ -18,13 +17,16 @@ parser.add_option("-c", "--cylindrical",
                   action="store_true", dest="cyl", default=False,
                   help="included self-shielding coil")
 
+parser.add_option("-f", "--file", dest="filename", default="femm_helper.fem",
+                  help="write to FILE", metavar="FILE")
 
 (options, args) = parser.parse_args()
 
 
-points = []
-segs = []
-arcsegs = []
+points = []      # format:  r,z
+segs = []        # format:  pt1,pt2
+arcsegs = []     # format:  pt1,pt2
+blocklabels = [] # format:  r,z,material,circuit
 
 print
 print
@@ -58,6 +60,9 @@ if not options.cyl:
     arcsegs.append([2,3])
     segs.append([0,3])
     segs.append([1,2])
+    r=(ri+ro)/2/2**.5
+    z=r
+    blocklabels.append([r,z,1,0])
 else:
     print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,-hi/2,0,-ho/2))
     print ('({0:.6f},{1:.6f}) ({2:.6f},{3:.6f})'.format(0,hi/2,0,ho/2))
@@ -80,6 +85,9 @@ else:
     segs.append([2,6])
     segs.append([6,4])
     segs.append([4,0])
+    r=(ri+ro)/2
+    z=(hi+ho)/2/4
+    blocklabels.append([r,z,1,0])
 print
 
 rc=input('Input the coil radius (m):  ')
@@ -115,6 +123,7 @@ for i in range(len(zpositions)):
     segs.append([len(points)-3,len(points)-2])
     segs.append([len(points)-2,len(points)-1])
     segs.append([len(points)-1,len(points)-4])
+    blocklabels.append([rpositions[i],zpositions[i],2,1])
 
 if options.ss:
     rc_ss=input('Input the radius of the self-shielding coil (m):  ')
@@ -138,7 +147,9 @@ if options.ss:
         segs.append([len(points)-3,len(points)-2])
         segs.append([len(points)-2,len(points)-1])
         segs.append([len(points)-1,len(points)-4])
+        blocklabels.append([rpositions_ss[i],zpositions_ss[i],2,2])
 
+blocklabels.append([rc/2,0,3,0]) # Air label
 
 b=input('Input the desired central field (uT):  ')
 mu0o4pi=1.0e-7 # T*m/A
@@ -180,6 +191,114 @@ else:
 
 # Write out all the points, segments, and arc segments, in FEMM format
 
-print "[NumPoints] = ",len(points)
+f=open(options.filename,'w')
+
+print>>f,'[Format]      =  4.0'
+print>>f,'[Frequency]   =  0'
+print>>f,'[Precision]   =  1e-008'
+print>>f,'[MinAngle]    =  30'
+print>>f,'[Depth]       =  1'
+print>>f,'[LengthUnits] =  meters'
+print>>f,'[ProblemType] =  axisymmetric'
+print>>f,'[Coordinates] =  cartesian'
+print>>f,'[ACSolver]    =  0'
+print>>f,'[Comment]     =  \"Add comments here.\"'
+print>>f,'[PointProps]   = 0'
+print>>f,'[BdryProps]   = 1'
+print>>f,'[BlockProps]  = 3'
+print>>f,'  <BeginBlock>'
+print>>f,'    <BlockName> = \"mu\"'
+print>>f,'    <Mu_x> = 20000'
+print>>f,'    <Mu_y> = 20000'
+print>>f,'    <H_c> = 0'
+print>>f,'    <H_cAngle> = 0'
+print>>f,'    <J_re> = 0'
+print>>f,'    <J_im> = 0'
+print>>f,'    <Sigma> = 0'
+print>>f,'    <d_lam> = 0'
+print>>f,'    <Phi_h> = 0'
+print>>f,'    <Phi_hx> = 0'
+print>>f,'    <Phi_hy> = 0'
+print>>f,'    <LamType> = 0'
+print>>f,'    <LamFill> = 1'
+print>>f,'    <NStrands> = 0'
+print>>f,'    <WireD> = 0'
+print>>f,'    <BHPoints> = 0'
+print>>f,'  <EndBlock>'
+print>>f,'  <BeginBlock>'
+print>>f,'    <BlockName> = \"Air\"'
+print>>f,'    <Mu_x> = 1'
+print>>f,'    <Mu_y> = 1'
+print>>f,'    <H_c> = 0'
+print>>f,'    <H_cAngle> = 0'
+print>>f,'    <J_re> = 0'
+print>>f,'    <J_im> = 0'
+print>>f,'    <Sigma> = 0'
+print>>f,'    <d_lam> = 0'
+print>>f,'    <Phi_h> = 0'
+print>>f,'    <Phi_hx> = 0'
+print>>f,'    <Phi_hy> = 0'
+print>>f,'    <LamType> = 0'
+print>>f,'    <LamFill> = 1'
+print>>f,'    <NStrands> = 0'
+print>>f,'    <WireD> = 0'
+print>>f,'    <BHPoints> = 0'
+print>>f,'  <EndBlock>'
+print>>f,'  <BeginBlock>'
+print>>f,'    <BlockName> = \"Copper\"'
+print>>f,'    <Mu_x> = 1'
+print>>f,'    <Mu_y> = 1'
+print>>f,'    <H_c> = 0'
+print>>f,'    <H_cAngle> = 0'
+print>>f,'    <J_re> = 0'
+print>>f,'    <J_im> = 0'
+print>>f,'    <Sigma> = 58'
+print>>f,'    <d_lam> = 0'
+print>>f,'    <Phi_h> = 0'
+print>>f,'    <Phi_hx> = 0'
+print>>f,'    <Phi_hy> = 0'
+print>>f,'    <LamType> = 0'
+print>>f,'    <LamFill> = 1'
+print>>f,'    <NStrands> = 0'
+print>>f,'    <WireD> = 0'
+print>>f,'    <BHPoints> = 0'
+print>>f,'  <EndBlock>'
+print>>f,'[CircuitProps]  = 2'
+print>>f,'  <BeginCircuit>'
+print>>f,'    <CircuitName> = \"coil\"'
+print>>f,'    <TotalAmps_re> = ',ic
+print>>f,'    <TotalAmps_im> = 0'
+print>>f,'    <CircuitType> = 1'
+print>>f,'  <EndCircuit>'
+print>>f,'  <BeginCircuit>'
+print>>f,'    <CircuitName> = \"coil2\"'
+print>>f,'    <TotalAmps_re> = 0'
+print>>f,'    <TotalAmps_im> = 0'
+print>>f,'    <CircuitType> = 1'
+print>>f,'  <EndCircuit>'
+
+print>>f,"[NumPoints] = ",len(points)
 for i in range(len(points)):
-    print
+    r,z=points[i]
+    print>>f,r,z,0,0
+
+print>>f,"[NumSegments] = ",len(segs)
+for i in range(len(segs)):
+    p1,p2=segs[i]
+    print>>f,p1,p2,-1,0,0,0
+
+if len(arcsegs) > 0:
+    print>>f,"[NumArcSegments] = ",len(arcsegs)
+    for i in range(len(arcsegs)):
+        p1,p2=arcsegs[i]
+        print>>f,p1,p2,180,1,0,0,0
+
+print>>f,"[NumHoles] = 0"
+
+print>>f,"[NumBlockLabels] = ",len(blocklabels)
+for i in range(len(blocklabels)):
+    r,z,material,circuit=blocklabels[i]
+    print>>f,r,z,material,-1,circuit,0,0,1,0
+
+
+f.close()

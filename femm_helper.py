@@ -106,14 +106,24 @@ if options.yesread:
         for i in range(8):
             innerstream.readline();
         oldu=0
+        sumr,sumz,numpoints_this_iso=0,0,0
+        which_iso=0
         for line in innerstream:
             x,y,z,u=map(float,line.split())
+            r=(x**2+y**2)**.5
+            sumr+=r
+            sumz+=z
+            numpoints_this_iso+=1
             if (oldu!=u):
-                r=(x**2+y**2)**.5
-                deltau=abs(oldu-u)
-                rposition_list.append(r)
-                zposition_list.append(z)
+                if (which_iso!=0):
+                    deltau=abs(oldu-u)
+                    rposition_list.append(sumr/numpoints_this_iso)
+                    zposition_list.append(sumz/numpoints_this_iso)
+                    sumr,sumz,numpoints_this_iso=0,0,0
+                which_iso+=1
                 oldu=u
+        rposition_list.append(sumr/numpoints_this_iso)
+        zposition_list.append(sumz/numpoints_this_iso)
         ic_inner=deltau
     rpositions=numpy.array(rposition_list)
     zpositions=numpy.array(zposition_list)
@@ -123,15 +133,25 @@ if options.yesread:
         for i in range(8):
             outerstream.readline();
         oldu=0
+        sumr,sumz,numpoints_this_iso=0,0,0
+        which_iso=0
         for line in outerstream:
             x,y,z,u=map(float,line.split())
+            r=(x**2+y**2)**.5
+            sumr+=r
+            sumz+=z
+            numpoints_this_iso+=1
             if (oldu!=u):
-                r=(x**2+y**2)**.5
-                deltau=abs(oldu-u)
-                rposition_list_ss.append(r)
-                zposition_list_ss.append(z)
+                if (which_iso!=0):
+                    deltau=abs(oldu-u)
+                    rposition_list_ss.append(sumr/numpoints_this_iso)
+                    zposition_list_ss.append(sumz/numpoints_this_iso)
+                    sumr,sumz,numpoints_this_iso=0,0,0
+                which_iso+=1
                 oldu=u
-        ic_outer=-deltau
+        rposition_list_ss.append(sumr/numpoints_this_iso)
+        zposition_list_ss.append(sumz/numpoints_this_iso)
+	ic_outer=-deltau
     rpositions_ss=numpy.array(rposition_list_ss)
     zpositions_ss=numpy.array(zposition_list_ss)
     

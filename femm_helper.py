@@ -20,6 +20,9 @@ parser.add_option("-c", "--cylindrical",
 parser.add_option("-r", "--read-file", action="store_true",
                   dest="yesread", default=False, help="read geometry from files")
 
+parser.add_option("-z", "--force-symmetry", action="store_true",
+                  dest="forcesymmetry", default=False, help="Force z-positions to be +/- symmetric")
+
 parser.add_option("-i", "--inner", dest="innerfile",
                   default="Cylinder_inner_0.2mA.txt", help="read inner coils from FILE", metavar="FILE")
 
@@ -31,6 +34,18 @@ parser.add_option("-f", "--file", dest="filename", default="femm_helper.fem",
 
 (options, args) = parser.parse_args()
 
+# Returns zpositions that are forced to be +/- symmetric
+# assumes the length of the array is even, for now, I think.
+def force(zpositions):
+    length=len(zpositions)
+    new_zpositions=numpy.zeros_like(zpositions)
+    print(zpositions)
+    for i in range(length/2):
+        avgz=(abs(zpositions[i])+abs(zpositions[length-1-i]))/2.
+        new_zpositions[i]=avgz
+        new_zpositions[length-1-i]=-avgz
+    print(new_zpositions)
+    return new_zpositions
 
 points = []      # format:  r,z
 segs = []        # format:  pt1,pt2
@@ -127,6 +142,8 @@ if options.yesread:
         ic_inner=deltau
     rpositions=numpy.array(rposition_list)
     zpositions=numpy.array(zposition_list)
+    if(options.forcesymmetry):
+        zpositions=force(zpositions)
     rposition_list_ss = []
     zposition_list_ss = []
     with open(options.outerfile) as outerstream:
@@ -154,6 +171,8 @@ if options.yesread:
 	ic_outer=-deltau
     rpositions_ss=numpy.array(rposition_list_ss)
     zpositions_ss=numpy.array(zposition_list_ss)
+    if(options.forcesymmetry):
+        zpositions_ss=force(zpositions_ss)
     
     sc=input('Input the side length for each coil profile (m):  ')
     rpositions_left=rpositions-sc/2

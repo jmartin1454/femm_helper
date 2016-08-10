@@ -39,12 +39,10 @@ parser.add_option("-f", "--file", dest="filename", default="femm_helper.fem",
 def force(zpositions):
     length=len(zpositions)
     new_zpositions=numpy.zeros_like(zpositions)
-    print(zpositions)
     for i in range(length/2):
         avgz=(abs(zpositions[i])+abs(zpositions[length-1-i]))/2.
         new_zpositions[i]=avgz
         new_zpositions[length-1-i]=-avgz
-    print(new_zpositions)
     return new_zpositions
 
 points = []      # format:  r,z
